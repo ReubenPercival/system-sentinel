@@ -15,7 +15,7 @@ System Sentinel is designed to be fully compatible with the Arch Linux package e
 
 1. Clone or download this repository.
 2. Ensure you have the local `PKGBUILD` and `start.py` in the same directory.
-3. Build and install natively using the Arch package manager:
+3. Build and install natively using the Arch build system:
    ```bash
    makepkg 
    ```
