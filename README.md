@@ -34,3 +34,10 @@ This project is open-source and licensed under the GNU General Public License v3
 ## About Me
 11 years old. Arch Linux user (btw). Writing Python scripts instead of doing homework. 💻
 
+## ☕ Support My Work
+
+If you like System Sentinel and want to help an 11-year-old developer upgrade his setup for even bigger open-source projects, you can support me here:
+
+[![ko-fi](https://ko-fi.com)](https://ko-fi.com)
+
+
