@@ -1,14 +1,27 @@
-import os, time, platform, webbrowser, shutil, subprocess
+import os, time, platform, webbrowser, shutil
 
 class S:
     HEADER, CYAN, GREEN, WARN, BOLD, END = '\033[95m\033[1m', '\033[96m', '\033[92m', '\033[93m', '\033[1m', '\033[0m'
 
-def check_aur_malware():
+def get_linux_distro():
+    """Определяет базу дистрибутива Linux"""
+    if os.path.exists("/etc/arch-release"):
+        return "arch"
+    elif os.path.exists("/etc/debian_version"):
+        return "debian"
+    elif os.path.exists("/etc/fedora-release"):
+        return "fedora"
+    return "unknown"
+
+def check_aur_malware(distro):
     """Проверка системы на наличие следов недавней атаки на AUR"""
     print(f"\n{S.CYAN} > Running Cyber Security Scan (AUR Malware Check)...{S.END}")
     time.sleep(1)
     
-    # Проверяем пути, куда обычно прописывался вредонос atomic-lockfile / js-digest
+    if distro != "arch":
+        print(f"{S.GREEN} ✅ Your system does not use AUR. You are completely safe from this threat!{S.END}")
+        return
+
     suspicious_paths = [
         "/usr/local/bin/atomic-lockfile",
         "/usr/bin/atomic-lockfile",
@@ -27,13 +40,13 @@ def check_aur_malware():
     else:
         print(f"\n{S.GREEN} > Security Scan complete! No known AUR malware signatures found.{S.END}")
 
-def deep_clean():
+def deep_clean(distro):
     print(f"{S.CYAN} > Initializing Deep Scan...{S.END}")
     home = os.path.expanduser("~")
     dirs_to_clean = [os.path.join(home, "Downloads"), os.path.join(home, ".cache")]
     count = 0
     
-    # Очистка файлов по расширениям
+    # Очистка временных файлов пользователя (работает везде)
     for d in dirs_to_clean:
         if os.path.exists(d):
             for f in os.listdir(d):
@@ -42,20 +55,31 @@ def deep_clean():
                     try:
                         os.remove(os.path.join(d, f))
                         count += 1
-                        time.sleep(0.05)
+                        time.sleep(0.02)
                     except: pass
                     
     print(f"  {S.GREEN}Removed {count} temporary files.{S.END}")
     
-    # Очистка системного кэша pacman и удаление сирот (требует пароль sudo)
-    print(f"\n{S.CYAN} > Optimizing CachyOS system package caches...{S.END}")
+    # Умная системная очистка в зависимости от дистрибутива
+    print(f"\n{S.CYAN} > Optimizing system package caches...{S.END}")
     time.sleep(0.5)
-    print(f"{S.BOLD}Cleaning unused pacman cache...{S.END}")
-    os.system("sudo pacman -Sc --noconfirm")
+    
+    if distro == "arch":
+        print(f"{S.BOLD}Cleaning unused pacman cache...{S.END}")
+        os.system("sudo pacman -Sc --noconfirm")
+    elif distro == "debian":
+        print(f"{S.BOLD}Cleaning apt cache and removing orphan packages...{S.END}")
+        os.system("sudo apt-get clean && sudo apt-get autoremove -y")
+    elif distro == "fedora":
+        print(f"{S.BOLD}Cleaning dnf package manager cache...{S.END}")
+        os.system("sudo dnf clean all")
+    else:
+        print(f"{S.WARN}Unknown package manager. Skipping system cache cleanup.{S.END}")
     
     print(f"\n{S.GREEN} > Deep Cleanup complete!{S.END}")
 
 def launch_menu():
+    distro = get_linux_distro()
     while True:
         os.system('clear')
         print(f"{S.HEADER}=== SYSTEM SENTINEL COMMAND CENTER ==={S.END}")
@@ -72,10 +96,10 @@ def launch_menu():
             print(f"{S.GREEN}Work environment initialized.{S.END}")
             time.sleep(2)
         elif choice == "2":
-            deep_clean()
+            deep_clean(distro)
             input(f"\n{S.CYAN}Press Enter to return to menu...{S.END}")
         elif choice == "3":
-            check_aur_malware()
+            check_aur_malware(distro)
             input(f"\n{S.CYAN}Press Enter to return to menu...{S.END}")
         elif choice == "4" or choice.lower() == "exit":
             break
