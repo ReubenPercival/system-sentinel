@@ -31,3 +31,6 @@ Feel free to fork the repository, open an issue, or submit a Pull Request. Let's
 ## 📄 License
 This project is open-source and licensed under the GNU General Public License v3.0 (GPL-3.0).
 
+## About Me
+11 years old. Arch Linux user (btw). Writing Python scripts instead of doing homework. 💻
+
