@@ -3,7 +3,7 @@ pkgver=1.3
 pkgrel=1
 pkgdesc="Advanced system maintenance"
 arch=('any')
-license=('MIT')
+license=('GPLv3')
 
 source=('start.py')
 sha256sums=('SKIP')
