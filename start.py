@@ -19,7 +19,7 @@ def check_aur_malware(distro):
     time.sleep(1)
     
     if distro != "arch":
-        print(f"{S.GREEN} ✅ Your system does not use AUR. You are completely safe from this threat!{S.END}")
+        print(f"{S.GREEN}  Your system does not use AUR. You are completely safe from this threat!{S.END}")
         return
 
     suspicious_paths = [
@@ -32,7 +32,7 @@ def check_aur_malware(distro):
     infected = False
     for path in suspicious_paths:
         if os.path.exists(path):
-            print(f"  {S.WARN}[🚨 ALERT] Found suspicious file:{S.END} {path}")
+            print(f"  {S.WARN}[ ALERT] Found suspicious file:{S.END} {path}")
             infected = True
             
     if infected:
