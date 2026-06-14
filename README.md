@@ -29,7 +29,7 @@ This project follows the core philosophies of the Linux ecosystem. Contributions
 Feel free to fork the repository, open an issue, or submit a Pull Request. Let's make system maintenance safer and faster together!
 
 ## License
-This project is open-source and licensed under the GNU General Public License v3.0 (GPL-3.0).
+This project is open-source and licensed under the European Union Public Licence v1.2 (EUPL v1.2).
 
 ## About Me
 11 years old. Arch Linux user (btw). Writing Python scripts instead of doing homework. 💻
