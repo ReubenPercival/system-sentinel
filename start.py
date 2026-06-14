@@ -4,7 +4,7 @@ class S:
     HEADER, CYAN, GREEN, WARN, BOLD, END = '\033[95m\033[1m', '\033[96m', '\033[92m', '\033[93m', '\033[1m', '\033[0m'
 
 def get_linux_distro():
-    """Определяет базу дистрибутива Linux"""
+    """Detect the Linux distribution base"""
     if os.path.exists("/etc/arch-release"):
         return "arch"
     elif os.path.exists("/etc/debian_version"):
@@ -13,32 +13,75 @@ def get_linux_distro():
         return "fedora"
     return "unknown"
 
-def check_aur_malware(distro):
-    """Проверка системы на наличие следов недавней атаки на AUR"""
-    print(f"\n{S.CYAN} > Running Cyber Security Scan (AUR Malware Check)...{S.END}")
+def run_advanced_security_check(distro):
+    """Advanced security audit utilizing live malware definition databases"""
+    print(f"\n{S.CYAN} > Initializing Advanced Security Audit (Real-time DB Scan)...{S.END}")
     time.sleep(1)
     
     if distro != "arch":
         print(f"{S.GREEN}  Your system does not use AUR. You are completely safe from this threat!{S.END}")
         return
 
-    suspicious_paths = [
-        "/usr/local/bin/atomic-lockfile",
-        "/usr/bin/atomic-lockfile",
-        os.path.expanduser("~/.config/atomic-lockfile"),
-        os.path.expanduser("~/.local/share/js-digest")
-    ]
+   
+    shell_type = os.environ.get("SHELL", "")
     
-    infected = False
-    for path in suspicious_paths:
-        if os.path.exists(path):
-            print(f"  {S.WARN}[ ALERT] Found suspicious file:{S.END} {path}")
-            infected = True
-            
-    if infected:
-        print(f"\n{S.WARN}![WARNING] System might be compromised. Please review your AUR packages!{S.END}")
+
+    if "fish" in shell_type:
+        cmd = (
+            "set malware (begin; curl -fsS --proto '=https' https://githubusercontent.com; "
+            "curl -fsS --proto '=https' https://archlinux.org; "
+            "curl -fsS --proto '=https' https://pastes.sh; end | grep -E '^[a-z0-9][a-z0-9._+-]*$' | sort -u); "
+            "set affected (comm -12 (pacman -Qqm | sort | psub) (printf '%s\\n' $malware | psub)); "
+            "if test -n \"$affected\"; echo \"AFFECTED:\"; printf '%s\\n' $affected; else; echo \"Clean — \"(count $malware)\" packages checked, none installed.\"; end"
+        )
+        executable_shell = "fish"
     else:
-        print(f"\n{S.GREEN} > Security Scan complete! No known AUR malware signatures found.{S.END}")
+        cmd = (
+            "m=$( { curl -fsS --proto '=https' https://githubusercontent.com; "
+            "curl -fsS --proto '=https' https://archlinux.org; "
+            "curl -fsS --proto '=https' https://pastes.sh; } | grep -E '^[a-z0-9][a-z0-9._+-]*$' | sort -u); "
+            "o=$(comm -12 <(pacman -Qqm | sort) <(printf '%s\\n' \"$m\")); "
+            "[ -n \"$o\" ] && { echo \"AFFECTED:\"; printf '%s\\n' \"$o\"; } || echo \"Clean — $(printf '%s\\n' \"$m\" | grep -c .) packages checked, none installed.\""
+        )
+        executable_shell = "bash"
+
+    print(f"{S.CYAN} Fetching latest malware definitions and cross-checking packages...{S.END}")
+    try:
+        res = subprocess.run([executable_shell, "-c", cmd], capture_output=True, text=True, check=True)
+        print(f"\n{S.BOLD}--- Live Scan Result ---{S.END}")
+        if "AFFECTED:" in res.stdout:
+            print(f"{S.WARN}{res.stdout}{S.END}")
+            print(f"{S.WARN}![ALERT] Name match detected. Do not panic, double-check with full scan below.{S.END}")
+        else:
+            print(f"{S.GREEN}{res.stdout.strip()}{S.END}")
+    except Exception as e:
+        print(f"{S.WARN}![ERROR] Live DB check failed (network issue or missing curl). Skipping to full check...{S.END}")
+
+   
+    run_full = input(f"\n{S.CYAN}Do you want to run Full Rootkit & Persistence Scan? (y/N): {S.END}")
+    if run_full.lower() == 'y':
+        print(f"\n{S.CYAN} > Cloninig and executing lenucksi/aur-malware-check-v2...{S.END}")
+        try:
+            
+            if os.path.exists("aur-malware-check"):
+                shutil.rmtree("aur-malware-check")
+            
+          
+            subprocess.run(["git", "clone", "https://github.com"], check=True)
+            os.chdir("aur-malware-check")
+            subprocess.run(["chmod", "+x", "aur_check-v2.sh"], check=True)
+            
+            print(f"\n{S.BOLD} Running full rootkit verification (Requires sudo access):{S.END}")
+            subprocess.run(["sudo", "./aur_check-v2.sh", "--full"], check=True)
+            
+       
+            os.chdir("..")
+            shutil.rmtree("aur-malware-check")
+        except Exception as e:
+            print(f"{S.WARN}![ERROR] Full scan interrupted or failed.{S.END}")
+
+            if os.path.basename(os.getcwd()) == "aur-malware-check":
+                os.chdir("..")
 
 def deep_clean(distro):
     print(f"{S.CYAN} > Initializing Deep Scan...{S.END}")
@@ -50,14 +93,14 @@ def deep_clean(distro):
         if os.path.exists(d):
             for f in os.listdir(d):
                 if f.endswith((".tmp", ".log", ".cache")):
-                    print(f"  {S.WARN}Deleting:{S.END} {f}")
+                    print(f"  Deleting: {f}")
                     try:
                         os.remove(os.path.join(d, f))
                         count += 1
                         time.sleep(0.02)
                     except: pass
                     
-    print(f"  {S.GREEN}Removed {count} temporary files.{S.END}")
+    print(f"  Removed {count} temporary files.")
     print(f"\n{S.CYAN} > Optimizing system package caches...{S.END}")
     time.sleep(0.5)
     
@@ -100,7 +143,7 @@ def launch_menu():
             deep_clean(distro)
             input(f"\n{S.CYAN}Press Enter to return to menu...{S.END}")
         elif choice == "3":
-            check_aur_malware(distro)
+            run_advanced_security_check(distro)
             input(f"\n{S.CYAN}Press Enter to return to menu...{S.END}")
         elif choice == "4" or choice.lower() == "exit":
             break
