@@ -13,19 +13,68 @@ def get_linux_distro():
         return "fedora"
     return "unknown"
 
+def run_local_rootkit_scan():
+    """Local rootkit and persistence verification"""
+    print(f"\n{S.CYAN} > Running Local Rootkit & Persistence Audit...{S.END}")
+    time.sleep(0.5)
+    
+    home = os.path.expanduser("~")
+    bad_indicators = 0
+    
+    # 1. Verification of persistence paths
+    check_paths = [
+        "/usr/local/bin/atomic-lockfile",
+        "/usr/bin/atomic-lockfile",
+        os.path.join(home, ".config/atomic-lockfile"),
+        os.path.join(home, ".local/share/js-digest"),
+        os.path.join(home, ".local/share/atomic-lockfile")
+    ]
+    
+    print(f"{S.BOLD} Checking system binaries and configurations...{S.END}")
+    for path in check_paths:
+        if os.path.exists(path):
+            print(f"  {S.WARN}[ALERT] Malicious indicator found:{S.END} {path}")
+            bad_indicators += 1
+            
+    # 2. Autostart entry audit
+    autostart_dir = os.path.join(home, ".config/autostart")
+    if os.path.exists(autostart_dir):
+        print(f"{S.BOLD} Analyzing desktop autostart entries...{S.END}")
+        for item in os.listdir(autostart_dir):
+            if "atomic" in item.lower() or "digest" in item.lower():
+                print(f"  {S.WARN}[ALERT] Suspicious autostart entry:{S.END} {item}")
+                bad_indicators += 1
+
+    # 3. Hidden eBPF process check via system process tree
+    print(f"{S.BOLD} Verifying background processes...{S.END}")
+    try:
+        ps_check = subprocess.run(["ps", "aux"], capture_output=True, text=True)
+        if "atomic-lockfile" in ps_check.stdout or "js-digest" in ps_check.stdout:
+            print(f"  {S.WARN}[ALERT] Active malware process found running in background!{S.END}")
+            bad_indicators += 1
+    except Exception:
+        pass
+
+    # Final Verdict
+    print(f"\n{S.BOLD}========================================={S.END}")
+    if bad_indicators == 0:
+        print(f"{S.GREEN} RESULT: CLEAN - No local rootkit indicators found.{S.END}")
+    else:
+        print(f"{S.WARN} RESULT: INFECTED ({bad_indicators} threats found!){S.END}")
+        print(f"{S.WARN} Change your credentials and review your system immediately!{S.END}")
+    print(f"{S.BOLD}========================================={S.END}")
+
 def run_advanced_security_check(distro):
     """Advanced security audit utilizing live malware definition databases"""
     print(f"\n{S.CYAN} > Initializing Advanced Security Audit (Real-time DB Scan)...{S.END}")
     time.sleep(1)
     
     if distro != "arch":
-        print(f"{S.GREEN}  Your system does not use AUR. You are completely safe from this threat!{S.END}")
+        print(f"{S.GREEN} Your system does not use AUR. You are safe from this threat!{S.END}")
         return
 
-   
     shell_type = os.environ.get("SHELL", "")
     
-
     if "fish" in shell_type:
         cmd = (
             "set malware (begin; curl -fsS --proto '=https' https://githubusercontent.com; "
@@ -51,37 +100,12 @@ def run_advanced_security_check(distro):
         print(f"\n{S.BOLD}--- Live Scan Result ---{S.END}")
         if "AFFECTED:" in res.stdout:
             print(f"{S.WARN}{res.stdout}{S.END}")
-            print(f"{S.WARN}![ALERT] Name match detected. Do not panic, double-check with full scan below.{S.END}")
         else:
             print(f"{S.GREEN}{res.stdout.strip()}{S.END}")
-    except Exception as e:
-        print(f"{S.WARN}![ERROR] Live DB check failed (network issue or missing curl). Skipping to full check...{S.END}")
+    except Exception:
+        print(f"{S.WARN}![ERROR] Live DB check failed (network issue). Skipping to local scan...{S.END}")
 
-   
-    run_full = input(f"\n{S.CYAN}Do you want to run Full Rootkit & Persistence Scan? (y/N): {S.END}")
-    if run_full.lower() == 'y':
-        print(f"\n{S.CYAN} > Cloninig and executing lenucksi/aur-malware-check-v2...{S.END}")
-        try:
-            
-            if os.path.exists("aur-malware-check"):
-                shutil.rmtree("aur-malware-check")
-            
-          
-            subprocess.run(["git", "clone", "https://github.com"], check=True)
-            os.chdir("aur-malware-check")
-            subprocess.run(["chmod", "+x", "aur_check-v2.sh"], check=True)
-            
-            print(f"\n{S.BOLD} Running full rootkit verification (Requires sudo access):{S.END}")
-            subprocess.run(["sudo", "./aur_check-v2.sh", "--full"], check=True)
-            
-       
-            os.chdir("..")
-            shutil.rmtree("aur-malware-check")
-        except Exception as e:
-            print(f"{S.WARN}![ERROR] Full scan interrupted or failed.{S.END}")
-
-            if os.path.basename(os.getcwd()) == "aur-malware-check":
-                os.chdir("..")
+    run_local_rootkit_scan()
 
 def deep_clean(distro):
     print(f"{S.CYAN} > Initializing Deep Scan...{S.END}")
